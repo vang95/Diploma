@@ -1,0 +1,82 @@
+#ifndef BASICVISUALRADIATION_H
+#define BASICVISUALRADIATION_H
+
+#pragma comment(lib, "opengl32.lib")
+
+#include <QtWidgets>
+#include <QGLWidget>
+#include <QMouseEvent>
+#include <QMap>
+
+#include "Components/Data/array.h"
+#include "setting.h"
+
+class BasicVisualRadiation;
+namespace setting_visual_radiation
+{
+    enum class ModeView{mode_points, mode_triangles};       // Режимы визаулизации изображения: Точечный режим и ландшафтный
+    const int       DEFAULT_SIZE_WIDHT_WINDOW = 600;        // Размер ширины окна виджета
+    const int       DEFAULT_SIZE_HEIGHT_WINDOW = 400;       // Размер высоты окна виджета
+    const QColor    DEFAULT_COLOR_BACKGROUND = Qt::black;   // Стандартный цвет фона виджета
+    const QColor    DEFAULT_COLOR_POINTS = Qt::red;         // Стандартный цвет точек при визуализации поверхностей в точечном режиме
+    const int       DEFAULT_SIZE_POINST = 2;
+    const ModeView DEFAULT_MODE_VIEW = ModeView::mode_points;// Стандартный режим вывода изображения
+}
+
+class BasicVisualRadiation : public QGLWidget
+{
+    Q_OBJECT
+public:
+    using tArray = Array<int, SIZE_X, SIZE_Z>;
+    using tMapColor = QMap<QString, QColor>;
+
+    BasicVisualRadiation(QWidget * perent = 0);
+protected:
+    void initializeComponents();        // Инициализация всех сопутствующих компонентов
+    virtual void initializeGL();        // Инициализация OpenGl
+    void reInitializeGl();              // Переинициализация OpenGl
+    void initializeColors();            // Инициализация цветов
+                                        // Установка размеров окна виджета
+    virtual void resizeGL(int widht = setting_visual_radiation::DEFAULT_SIZE_WIDHT_WINDOW,
+                          int heigth = setting_visual_radiation::DEFAULT_SIZE_HEIGHT_WINDOW);
+    virtual void paintGL();                         // Визуализация всего виджета
+    virtual void mousePressEvent(QMouseEvent * pe); // Реагирование виджета при нажатии мышки
+    virtual void mouseMoveEvent(QMouseEvent * pe);  // Реагирования виджета при движении мышки
+signals:
+    void signalReadyFigureUpdate();     // Сигнал, характеризующий готовность обновление фигуры (Вызывается после установки данных о поверхности)
+public slots:
+    void slotUpdateFigure();            // Слот обновление фигуры
+    void slotSetModePoints();           // Установка визуализации поверхности в режиме точек
+    void slotSetModeTriangles();        // Установка визуализация поверхности в режиме Ландшафта через треугольники
+private:
+    GLuint createSurface();             // Создание общей Поверхности
+    void createAxises();                // Создание осей x, y, z
+    void createModePoints();            // Формирование поверхности по средствам точек
+    void createModeTriangles();         // Формирование поверхности по средствам ландшафта(через треугольники)
+
+    bool flagReadyDraw() const;         // Флаг готовности к визуализации          (Требуется, в случаее, если данные пока не загружены, но визуализация осей требуется)
+    void enabelFlagReadyDraw();         // Включение флага готовности к прорисовке
+    void disabalFlagReadyDraw();        // Выключение флага готовности к прорисовке
+public:
+    void setArray(const tArray & array);// Установка нового значения
+    const tArray & getArray() const;    // Получение данных о поверхности
+private:
+    bool            m_flagReadyDraw;    // Флаг готовности рисовать поверхность
+    GLuint          m_nFigure;          // Положение фигуры в прастранстве
+    GLfloat         m_xRotate;          // Положение фигуры по оси x
+    GLfloat         m_yRotate;          // Положение фигуры по оси y
+    QPoint          m_Position;         // Позиция фигуры
+
+    tMapColor       m_mapColors;        // Список возможных цветов
+    QColor          m_colorBackground;  // Цвет фона
+    QColor          m_color_points;     // Цвет точек про прорисовки поверхности в точечном режиме
+    GLuint          m_sizePoint;        // Размер точек при прорисовки поверхности в точечном режиме
+    ModeView        m_modeView;         // Режим прорисовки поверхности(через точки или ландшафта)
+
+    GLfloat         m_ratio_x;          // Коофициент значений по оси x
+    GLfloat         m_ratio_y;          // Коофициент значений по оси y
+    GLfloat         m_ratio_z;          // Коофициент значений по оси z
+    tArray          m_dataFigure;       // Массив значений поверхности
+};
+
+#endif // BASICVISUALRADIATION_H
